@@ -1,0 +1,38 @@
+#/home/fed/code/par_2/запросы к soc2 (ffe2a7e)
+
+ set region_id_region =  (select new.id_region 	from region);
+
+ insert into tourmament(region_id_region)
+ select new.id_region
+	from region;
+
+	set new.region_id_region = (select id_region from region where region_name = new.region_id_region);
+
+
+добавление турниров
+INSERT IGNORE INTO `soc2`.`tournament`(`tournament_name`,`tournament_abr`, `region_id_region`) 
+VALUES('Ligue 1','D1',
+(select `id_region` from `soc2`.`region` where `region_name` = 'Algeria')) ;
+
+добавление сезонов
+INSERT IGNORE INTO `soc2`.`sezon` (`sezon_name`) VALUES ('2018/2019');
+
+сезон + турнир
+добавление турниров
+    query3 = """INSERT IGNORE INTO soc2.sezon_has_tournament
+        (sezon_id_sezon,tournament_id_tournament,sezon_has_tournament_url_exp)
+        value ((SELECT id_sezon FROM sezon WHERE sezon_name="%s"),
+        (SELECT id_tournament FROM tournament 
+        WHERE tournament_name="%s" and region_id_region =
+        (SELECT id_region FROM region WHERE region_name ="%s")),
+        "%s")"""
+INSERT IGNORE INTO soc2.sezon_has_tournament
+        (sezon_id_sezon,tournament_id_tournament,sezon_has_tournament_url_exp)
+        value ((SELECT id_sezon FROM sezon WHERE sezon_name="2018/2019"),
+        (SELECT id_tournament FROM tournament 
+        WHERE tournament_name="Ligue 1" and region_id_region =
+        (SELECT id_region FROM region WHERE region_name ="Algeria")),
+        "/soccer/algeria/ligue-1/")
+
+
+
