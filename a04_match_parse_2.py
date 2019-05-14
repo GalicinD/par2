@@ -1,21 +1,27 @@
-#/home/fed/code/par_2/a04_match_parse.py (ffe2a7e)
-
 from random import randint
+import re
+import os
+import gc
+
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import NoSuchElementException
-import re
-import os
-import gc
 
-from db_soc2 import query_with_fetchall, set_proxy, process_sleep
+from db_soc2 import *
+""" модуль парсингаданных матчей с сайта https: // www.betexplorer.com / soccer
+    сначала получаем ссылки на матчи определённого нами чемпионата и сезона,
+    (только закончившиесяБ с вкладки результаты). Сохраняем их в файл .cvs в 
+    папку /tourn/<страна>/. Потом считываем ссылки по одной и парсим данные
+ """
 
 my_proxy = "217.113.122.142:3128"
 
 
 def _read_link(country, liga):
+    """ собираем ссылки на матчи из файла папки /tourn/ если они не внесены отдельно в файл матчей.
+        Связано с первыми версиями парсинга """
     link_match = []
 
     file_name = 'tourn/%s/web_match_%s.csv' % (country, liga)
@@ -31,6 +37,7 @@ def _read_link(country, liga):
 
 
 def _match_rospis(country, liga):
+    """ непосредственный парсинг матчей в файл .csv в папку /match/<country> """
     line = "---------------------------------------------------------------"
     global my_proxy
     gol_away_list = []
@@ -112,9 +119,12 @@ def _match_rospis(country, liga):
                     gol_home_list.append('Awarded')
                 else:
                     gol_away_list.append('Awarded')
-            elif driver.find_element_by_id('js-eventstage').text == 'Canceled':
-                gol_home_list.append('Canceled')
+            else:
+                gol_home_list.append(
+                    driver.find_element_by_id('js-eventstage').text)
         except:
+            # если матч нормально закончился присваиваем ему статус 'Finished'
+            gol_home_list.append('Finished')
             # голы хозяева: минуты-игроки-комент(если есть)
             if int(match_data_list[7][: match_data_list[7].find(':')]) > 0:
                 min_list = driver.find_elements_by_css_selector(
@@ -281,7 +291,6 @@ def _results_match(country, liga, end_url):
 
     driver = set_proxy(my_proxy)
     driver.get(url)
-    # try:
     # нажимаем кнопки, перебирая стадии
     data2 = driver.find_elements_by_css_selector(
         '#sm-0-0 .list-tabs__item__in')
@@ -311,11 +320,12 @@ def match_parse(country, liga, url_end='',  results_match_bool=True):
     if not (os.path.exists('tourn/%s/' % country)):
         os.mkdir('tourn/%s/' % country)
 
-    file_rez = 'tourn/%s/web_match_%s.csv' % (country, liga)
-
     if results_match_bool:
         # нужно ли искать ссылки на матчи
         _results_match(country, liga, url_end)
+
+    file_rez = 'tourn/%s/web_match_%s.csv' % (country, liga)
+    dyplicat_row_delete(file_rez)
     # сканируем матчи и заносим данные в файл
     _match_rospis(country, liga)
 
@@ -330,14 +340,15 @@ def __main():
     #             results_match_bool=True)
 
     query_3_1 = """ SELECT sezon_has_tournament_url_exp FROM soc2.sezon_has_tournament
-        where sezon_has_tournament_url_exp like '%/ireland/premier-division-%' and
+        where sezon_has_tournament_url_exp like '%/norway/obos-ligaen-%' and
         (sezon_has_tournament_url_exp like '%2018/%'
         or sezon_has_tournament_url_exp like '%2017/%'
-        or sezon_has_tournament_url_exp like '%2016/%'
-        or sezon_has_tournament_url_exp like '%2015/%'
-        or sezon_has_tournament_url_exp like '%2014/%'
-        or sezon_has_tournament_url_exp like '%2013/%'
         ); """
+
+        # or sezon_has_tournament_url_exp like '%2016/%'
+        # or sezon_has_tournament_url_exp like '%2015/%'
+        # or sezon_has_tournament_url_exp like '%2014/%'
+        # or sezon_has_tournament_url_exp like '%2013/%'
 
     tour_list_href = query_with_fetchall(query_3_1)
     # print(tour_list_href)
@@ -351,4 +362,3 @@ def __main():
 
 if __name__ == '__main__':
     __main()
-
