@@ -340,16 +340,14 @@ def __main():
     #             results_match_bool=True)
 
     query_3_1 = """ SELECT sezon_has_tournament_url_exp FROM soc2.sezon_has_tournament
-        where sezon_has_tournament_url_exp like '%/norway/obos-ligaen-%' and
+        where sezon_has_tournament_url_exp like '%/brazil/serie-a-%' and
         (sezon_has_tournament_url_exp like '%2018/%'
         or sezon_has_tournament_url_exp like '%2017/%'
+        or sezon_has_tournament_url_exp like '%2016/%'
+        or sezon_has_tournament_url_exp like '%2015/%'
+        or sezon_has_tournament_url_exp like '%2014/%'
         ); """
-
-        # or sezon_has_tournament_url_exp like '%2016/%'
-        # or sezon_has_tournament_url_exp like '%2015/%'
-        # or sezon_has_tournament_url_exp like '%2014/%'
         # or sezon_has_tournament_url_exp like '%2013/%'
-
     tour_list_href = query_with_fetchall(query_3_1)
     # print(tour_list_href)
 

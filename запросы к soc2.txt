@@ -1,12 +1,272 @@
-#/home/fed/code/par_2/запросы к soc2 (ffe2a7e)
 
- set region_id_region =  (select new.id_region 	from region);
 
- insert into tourmament(region_id_region)
- select new.id_region
-	from region;
+# забитые- пропущенные по 15 минут
 
-	set new.region_id_region = (select id_region from region where region_name = new.region_id_region);
+with 
+sostav as( -- все команды турнира
+	select m.match_tour as tourn,m.match_away as team from `match` m
+	union
+	select m.match_tour,m.match_home from `match` m 
+    ),
+m_ho as (  -- все голы турнира по командам
+	select m.match_tour as tourn, m.id_match, m.match_home,m.match_away,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and g.gol_time<16) as score15,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and g1.gol_time<16) as conce15,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and g.`gol_time` between 16 and 30) as score30,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and g1.`gol_time` between 16 and 30) as conce30,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and ((g.`gol_time` between 31 and 45) or 
+    (g.`gol_time` between 4500 and 4600))) as score45,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and ((g1.`gol_time` between 31 and 45) or 
+    (g1.`gol_time` between 4500 and 4600))) as conce45,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and g.gol_time between 46 and 60) as score60,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and g1.gol_time between 46 and 60) as conce60,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and g.`gol_time` between 61 and 75) as score75,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and g1.`gol_time` between 61 and 75) as conce75,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1 and ((g.`gol_time` between 76 and 90) or 
+    (g.`gol_time` between 9000 and 9100))) as score90,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0 and ((g1.`gol_time` between 76 and 90) or 
+    (g1.`gol_time` between 9000 and 9100))) as conce90
+	from `match` m 
+	)
+    
+-- тотал дома по 15мин  
+-- select t2.`team_name_exp`,s2.team, sum(m2.score15) as s15, sum(m2.conce15) as c15,sum(m2.score30) as s30, sum(m2.conce30) as c30,sum(m2.score45) as s45, sum(m2.conce45) as c45, 
+-- sum(m2.score15) + sum(m2.conce15)+sum(m2.score30)+sum(m2.conce30)+sum(m2.score45)+sum(m2.conce45) as Th1, '  |  ',
+-- sum(m2.score60) as s60, sum(m2.conce60) as c60,sum(m2.score75) as s75, sum(m2.conce75) as c75,sum(m2.score90) as s90, sum(m2.conce90) as c90,
+-- sum(m2.score60)+sum(m2.conce60)+sum(m2.score75)+sum(m2.conce75)+sum(m2.score90)+sum(m2.conce90) as Th2
+-- from sostav s2
+-- left join m_ho m2 on m2.match_home=s2.team and s2.tourn=m2.tourn
+-- left join team t2 on t2.id_team=s2.team
+-- where m2.tourn=970 
+-- group by s2.team
+-- order by t2.`team_name_exp`
+
+-- union all
+-- select null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+-- union all
+
+-- тотал в гостях по 15мин
+-- select t2.`team_name_exp`,s2.team,  sum(m2.conce15) as c15,sum(m2.score15) as s15, sum(m2.conce30) as c30,sum(m2.score30) as s30, sum(m2.conce45) as c45, sum(m2.score45) as s45,
+-- sum(m2.score15) + sum(m2.conce15)+sum(m2.score30)+sum(m2.conce30)+sum(m2.score45)+sum(m2.conce45) as Th1, '  |  ',
+-- sum(m2.conce60) as c60,sum(m2.score60) as s60,sum(m2.conce75) as c75,sum(m2.score75) as s75, sum(m2.conce90) as c90,sum(m2.score90) as s90, 
+-- sum(m2.score60)+sum(m2.conce60)+sum(m2.score75)+sum(m2.conce75)+sum(m2.score90)+sum(m2.conce90) as Th2
+-- from sostav s2
+-- left join m_ho m2 on m2.match_away=s2.team and s2.tourn=m2.tourn
+-- left join team t2 on t2.id_team=s2.team
+-- where m2.tourn=970 
+-- group by s2.team
+-- order by t2.`team_name_exp`
+-- union all
+-- select null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+-- union all
+-- суммарный тотал по 15мин
+select t2.`team_name_exp`,s3.team, h1.c15+h2.s15 as s15, h1.s15+h2.c15 as c15,h1.c30+h2.s30 as s30, h1.s30+h2.c30 as c30,h1.c45+h2.s45 as s45, h1.s45+h2.c45 as c45,
+h1.Th1+h2.Th1 as Th1,'  |  ', h1.c60+h2.s60 as s60, h1.s60+h2.c60 as c60,h1.c75+h2.s75 as s75, h1.s75+h2.c75 as c75,h1.c90+h2.s90 as s90, h1.s90+h2.c90 as c90,
+h1.Th2+h2.Th2 as Th2
+from sostav s3
+left join (
+	select s2.tourn, s2.team,  sum(m2.conce15) as c15,sum(m2.score15) as s15, sum(m2.conce30) as c30,sum(m2.score30) as s30, sum(m2.conce45) as c45, sum(m2.score45) as s45,
+	sum(m2.score15) + sum(m2.conce15)+sum(m2.score30)+sum(m2.conce30)+sum(m2.score45)+sum(m2.conce45) as Th1, '  |  ',
+	sum(m2.conce60) as c60,sum(m2.score60) as s60,sum(m2.conce75) as c75,sum(m2.score75) as s75, sum(m2.conce90) as c90,sum(m2.score90) as s90, 
+	sum(m2.score60)+sum(m2.conce60)+sum(m2.score75)+sum(m2.conce75)+sum(m2.score90)+sum(m2.conce90) as Th2
+	from sostav s2
+	left join m_ho m2 on m2.match_away=s2.team and s2.tourn=m2.tourn
+	group by s2.tourn,s2.team
+) h1 on h1.team=s3.team and h1.tourn=s3.tourn
+left join (
+	select s21.tourn, s21.team, sum(m2.score15) as s15, sum(m2.conce15) as c15,sum(m2.score30) as s30, sum(m2.conce30) as c30,sum(m2.score45) as s45, sum(m2.conce45) as c45, 
+	sum(m2.score15) + sum(m2.conce15)+sum(m2.score30)+sum(m2.conce30)+sum(m2.score45)+sum(m2.conce45) as Th1, '  |  ',
+	sum(m2.score60) as s60, sum(m2.conce60) as c60,sum(m2.score75) as s75, sum(m2.conce75) as c75,sum(m2.score90) as s90, sum(m2.conce90) as c90,
+	sum(m2.score60)+sum(m2.conce60)+sum(m2.score75)+sum(m2.conce75)+sum(m2.score90)+sum(m2.conce90) as Th2
+	from sostav s21
+	left join m_ho m2 on m2.match_home=s21.team and s21.tourn=m2.tourn
+	group by s21.tourn,s21.team
+) h2 on h2.team=s3.team and h2.tourn=s3.tourn
+left join team t2 on t2.id_team=s3.team
+where s3.tourn =970 
+order by t2.`team_name_exp`
+
+
+# стастика счетов и тоталов
+
+with 
+m_ho as (  -- все голы турнира по командам
+	select m.match_tour as tourn, m.id_match, 
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1) as score,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0) as conce
+	from `match` m 
+	),
+m_ha as (  -- все голы турнира
+	select m.match_tour as tourn, 
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match) as tot
+	from `match` m 
+	),
+score as (
+	SELECT m.tourn, m.score, m.conce, count(m.score) as scores
+	FROM m_ho m 
+	group by m.tourn, m.score, m.conce
+	order by scores desc,(m.score+m.conce)
+),
+total as (
+	select f.tourn, f.tot, count(f.tot) as coun, 
+    round(count(f.tot)/(select count(*) from m_ho h where h.tourn=f.tourn)*100,2) as  pro
+    from m_ha f
+    group by f.tourn, f.tot 
+	order by tot, coun
+),
+t5 as (
+	select tt.tot, tt.coun, tt.pro
+	from total tt
+	where tt.tourn=970
+)
+
+SELECT m2.score, m2.conce, m2.scores
+FROM score m2 
+where m2.tourn=970
+union all
+select "-----","-----","------"
+union all
+select "total","coun", " pro"
+union all
+select *
+from t5
+
+
+# турнирная таблица без учёта фактора игр между собой при равенстве очков
+
+use soc2;
+with  
+sostav as( -- все команды турнира
+	select m.match_tour as tourn,m.match_away as team from `match` m
+	union
+	select m.match_tour,m.match_home from `match` m 
+),
+m_ho as (  -- матчи, когда команда была хозяевами
+	select m.match_home as team, m.match_tour as tourn,m.id_match, 
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=1) as score,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=0) as conce
+	from `match` m 
+	union all -- добавим матчи, когда команда была гостями  
+	select  m.match_away,m.match_tour, m.id_match,
+	(select count(g.id_gol) from gol g where m.id_match=g.gol_match and g.gol_home=0) as score,
+	(select count(g1.id_gol) from gol g1 where m.id_match=g1.gol_match and g1.gol_home=1) as conce
+	from `match` m 
+),
+team_rez as (
+	select v.team, v.tourn,
+    count(h.id_match) as GP,
+    sum(if(h.score>h.conce,1,0)) as W,sum(if(h.score=h.conce,1,0)) as D,
+    sum(if(h.score<h.conce,1,0)) as L, sum(h.score) as GF, sum(h.conce) as GA,
+    sum(if(h.score>h.conce,3,if(h.score=h.conce,1,0))) as Pts
+    from sostav v
+    left join m_ho h on v.team=h.team and v.tourn=h.tourn
+    group by v.team, v.tourn
+)
+
+SELECT t.team_name_exp as team,  GP,  Pts, W, D, L, GF, GA, tr.GF-tr.GA as "+/-", '  |' as ' ',
+round(tr.GF/tr.GP,2) as GaM, round(tr.GA/tr.GP,2) as GpM,round((tr.GF+tr.GA)/tr.GP,2) as GM
+FROM team_rez tr
+left join team t on tr.team=t.id_team
+where tr.tourn=970
+order by Pts desc, (tr.GF-tr.GA) desc, W desc ;
+
+# список команд турнира (здесь взят турнир 970)
+
+select m.match_away as team from `match` m where m.match_tour=970
+union
+select m.match_home from `match` m where m.match_tour=970
+
+# матчи 2х противников с ограничением количества матчей и признаком дома/гости
+
+SELECT date_format(m.match_datatime , '%Y-%m-%d:%H-%i') as Date, 
+(SELECT s.sezon_name  
+FROM soc2.sezon_has_tournament as st
+join sezon as s on st.sezon_id_sezon = s.id_sezon
+where st.id_sezon_has_tournament=m.match_tour) as Sezon, 
+(SELECT  t.tournament_name 
+FROM soc2.sezon_has_tournament as st
+join tournament as t on st.tournament_id_tournament = t.id_tournament
+where st.id_sezon_has_tournament=m.match_tour)  as Tournament,
+ro.round_name as Round, te.team_name_exp as Home,
+(SELECT te.team_name_exp
+FROM soc2.team as te
+where te.id_team = m.match_away) as Away,
+
+if((SELECT count(*) from gol where gol.gol_match = m.id_match),
+(select 
+concat(
+cast(count(if(gol.gol_home = 0, id_gol, NULL)) as character),
+' : ',
+cast(count(if(gol.gol_home = 1, id_gol, NULL)) as character)) 
+FROM soc2.`gol` 
+where gol.gol_match = m.id_match
+group by gol.gol_match), '0 : 0') as Score
+
+FROM soc2.`match` as m
+join team as te on te.id_team = m.match_home
+join round as ro on ro.id_round = m.match_round
+where te.team_name_exp in ('Neman','Dnepr') and (SELECT te.team_name_exp
+FROM soc2.team as te
+where te.id_team = m.match_away) in ('Neman','Dnepr') 
+order by Date desc
+limit 100;
+
+
+# по номеру турнира узнать сезон и название
+
+SELECT s.sezon_name as Sezon, t.tournament_name as Tournament 
+FROM soc2.sezon_has_tournament as st
+join sezon as s on st.sezon_id_sezon = s.id_sezon
+join tournament as t on st.tournament_id_tournament = t.id_tournament ;
+
+# часть запроса (столбцы сезон и турнир) в матче
+
+(SELECT s.sezon_name  
+FROM soc2.sezon_has_tournament as st
+join sezon as s on st.sezon_id_sezon = s.id_sezon
+where st.id_sezon_has_tournament=m.match_tour) as Sezon, 
+(SELECT  t.tournament_name 
+FROM soc2.sezon_has_tournament as st
+join tournament as t on st.tournament_id_tournament = t.id_tournament
+where st.id_sezon_has_tournament=m.match_tour)  as Tournament,
+
+
+# запрос на голы по номерам
+SELECT 
+(select team_name_exp from `team` where id_team=
+(select match_home from `match` where id_match=gol.gol_match)) as home,
+(select team_name_exp from `team` where id_team=
+(select match_away from `match` where id_match=gol.gol_match)) as away,
+concat(
+cast(count(if(gol.gol_home = 0, id_gol, NULL)) as character),
+' : ',
+cast(count(if(gol.gol_home = 1, id_gol, NULL)) as character)) as score,
+case
+	when count(if(gol.gol_home = 0, id_gol, NULL)) > count(if(gol.gol_home = 1, id_gol, NULL)) then '1'
+	when count(if(gol.gol_home = 0, id_gol, NULL)) = count(if(gol.gol_home = 1, id_gol, NULL)) then 'x'
+	when count(if(gol.gol_home = 0, id_gol, NULL)) < count(if(gol.gol_home = 1, id_gol, NULL)) then '2'
+end as itog
+FROM `gol` 
+where gol_match in (3,4,5,6,7,8,9)
+group by gol_match;
+
+
+'Luch Minsk', 'FK Smolevichi', '1 : 1', 'x'
+
+
+
+
+
+
+
+SELECT if(
+concat(
+cast(count(if(gol.gol_home = 0, id_gol, NULL)) as character),
+' : ',
+cast(count(if(gol.gol_home = 1, id_gol, NULL)) as character)) as score,
+FROM soc2.`gol` 
+where gol_match in (3,4,5,6,7,8,9)
+group by gol_match;
 
 
 добавление турниров
